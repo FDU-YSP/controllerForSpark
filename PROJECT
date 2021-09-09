@@ -1,0 +1,6 @@
+domain: my.domain
+layout:
+- go.kubebuilder.io/v3
+projectName: controllerforspark
+repo: my.domain/controllerForSpark
+version: "3"
