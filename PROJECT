@@ -3,4 +3,14 @@ layout:
 - go.kubebuilder.io/v3
 projectName: controllerforspark
 repo: my.domain/controllerForSpark
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: my.domain
+  group: spark
+  kind: SparkJob
+  path: my.domain/controllerForSpark/api/v1
+  version: v1
 version: "3"

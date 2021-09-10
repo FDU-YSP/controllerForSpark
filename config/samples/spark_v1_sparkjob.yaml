@@ -1,0 +1,7 @@
+apiVersion: spark.my.domain/v1
+kind: SparkJob
+metadata:
+  name: sparkjob-sample
+spec:
+  # Add fields here
+  foo: bar
