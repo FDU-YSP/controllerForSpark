@@ -18,6 +18,8 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	_ "sigs.k8s.io/controller-runtime/pkg/event"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -32,6 +34,15 @@ type SparkJobReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
+
+const (
+	SparkStatusPendingPhase  = "pending"
+	SparkStatusCreatingPhase = "creating"
+	SparkStatusRunningPhase  = "running"
+	SparkStatusSucceedPhase  = "succeed"
+	SparkStatusFailedPhase   = "failed"
+	SparkStatusUnknowPhase   = "unknow"
+)
 
 //+kubebuilder:rbac:groups=spark.my.domain,resources=sparkjobs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=spark.my.domain,resources=sparkjobs/status,verbs=get;update;patch
@@ -48,10 +59,78 @@ type SparkJobReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *SparkJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
-
+	ctx2 := context.Background()
 	// your logic here
+	var  sparkJob sparkv1.SparkJob
 
-	return ctrl.Result{}, nil
+	// req.NamespacedName = namespace + / + name
+	if err := r.Get(ctx, req.NamespacedName, &sparkJob); err != nil {
+		// r.Log.WithName("unable to fetch migrate")
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	statusOfCopy := sparkJob.Status.DeepCopy()
+	// specOfCopy   := sparkJob.Spec.DeepCopy()
+
+	//defer func() {
+	//	// print log
+	//
+	//	// change current object's status
+	//	sparkJob.Status = *statusOfCopy
+	//	if err := r.Status().Update(ctx, &sparkJob); err != nil {
+	//		fmt.Println(err)
+	//	}
+	//
+	//	if err := r.Update(ctx, &sparkJob); err != nil {
+	//		fmt.Println(err)
+	//	}
+	//
+	//}()
+
+	switch statusOfCopy.Phase {
+	case "":
+		// print log
+		// your logic here
+		statusOfCopy.Phase = SparkStatusPendingPhase
+		fmt.Println("pending")
+		sparkJob.Status = *statusOfCopy
+		if err := r.Status().Update(ctx2, &sparkJob); err != nil {
+			fmt.Println(err)
+		}
+		if err := r.Update(ctx2, &sparkJob); err != nil {
+			fmt.Println(err)
+		}
+		return ctrl.Result{Requeue: true}, nil
+	case SparkStatusPendingPhase:
+		// print log
+		// your logic here
+		statusOfCopy.Phase = SparkStatusCreatingPhase
+		fmt.Println("creating")
+		sparkJob.Status = *statusOfCopy
+		if err := r.Status().Update(ctx2, &sparkJob); err != nil {
+			fmt.Println(err)
+		}
+		return ctrl.Result{Requeue: true}, nil
+	case SparkStatusCreatingPhase:
+		statusOfCopy.Phase = SparkStatusRunningPhase
+		fmt.Println("running")
+		sparkJob.Status = *statusOfCopy
+		if err := r.Status().Update(ctx2, &sparkJob); err != nil {
+			fmt.Println(err)
+		}
+		return ctrl.Result{Requeue: true}, nil
+	case SparkStatusRunningPhase:
+		// print log
+		// your logic here
+		statusOfCopy.Phase = SparkStatusSucceedPhase
+		fmt.Println("succeed")
+		sparkJob.Status = *statusOfCopy
+		if err := r.Status().Update(ctx2, &sparkJob); err != nil {
+			fmt.Println(err)
+		}
+		return ctrl.Result{Requeue: true}, nil
+	}
+	return ctrl.Result{Requeue: true}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -60,3 +139,16 @@ func (r *SparkJobReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&sparkv1.SparkJob{}).
 		Complete(r)
 }
+
+//type SparkJobPredicate struct {
+//}
+//
+//func (s SparkJobPredicate) Update(e event.UpdateEvent) bool {
+//	return false
+//}
+//func (s SparkJobPredicate) Delete(e event.DeleteEvent) bool {
+//	return false
+//}
+//func (s SparkJobPredicate) Generic(e event.GenericEvent) bool {
+//	return false
+//}
