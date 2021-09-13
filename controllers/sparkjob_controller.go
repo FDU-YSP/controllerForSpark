@@ -59,7 +59,7 @@ const (
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *SparkJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
-	ctx2 := context.Background()
+	//ctx2 := context.Background()
 	// your logic here
 	var  sparkJob sparkv1.SparkJob
 
@@ -72,62 +72,49 @@ func (r *SparkJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	statusOfCopy := sparkJob.Status.DeepCopy()
 	// specOfCopy   := sparkJob.Spec.DeepCopy()
 
-	//defer func() {
-	//	// print log
-	//
-	//	// change current object's status
-	//	sparkJob.Status = *statusOfCopy
-	//	if err := r.Status().Update(ctx, &sparkJob); err != nil {
-	//		fmt.Println(err)
-	//	}
-	//
-	//	if err := r.Update(ctx, &sparkJob); err != nil {
-	//		fmt.Println(err)
-	//	}
-	//
-	//}()
+	defer func() {
+		// print log
+
+		// change current object's status
+		sparkJob.Status = *statusOfCopy
+		if err := r.Status().Update(ctx, &sparkJob); err != nil {
+			fmt.Println(err)
+		}
+
+		if err := r.Update(ctx, &sparkJob); err != nil {
+			fmt.Println(err)
+		}
+
+	}()
 
 	switch statusOfCopy.Phase {
 	case "":
 		// print log
+
 		// your logic here
 		statusOfCopy.Phase = SparkStatusPendingPhase
 		fmt.Println("pending")
-		sparkJob.Status = *statusOfCopy
-		if err := r.Status().Update(ctx2, &sparkJob); err != nil {
-			fmt.Println(err)
-		}
-		if err := r.Update(ctx2, &sparkJob); err != nil {
-			fmt.Println(err)
-		}
+
 		return ctrl.Result{Requeue: true}, nil
 	case SparkStatusPendingPhase:
 		// print log
 		// your logic here
 		statusOfCopy.Phase = SparkStatusCreatingPhase
 		fmt.Println("creating")
-		sparkJob.Status = *statusOfCopy
-		if err := r.Status().Update(ctx2, &sparkJob); err != nil {
-			fmt.Println(err)
-		}
+
 		return ctrl.Result{Requeue: true}, nil
+
 	case SparkStatusCreatingPhase:
 		statusOfCopy.Phase = SparkStatusRunningPhase
 		fmt.Println("running")
-		sparkJob.Status = *statusOfCopy
-		if err := r.Status().Update(ctx2, &sparkJob); err != nil {
-			fmt.Println(err)
-		}
+
 		return ctrl.Result{Requeue: true}, nil
 	case SparkStatusRunningPhase:
 		// print log
 		// your logic here
 		statusOfCopy.Phase = SparkStatusSucceedPhase
 		fmt.Println("succeed")
-		sparkJob.Status = *statusOfCopy
-		if err := r.Status().Update(ctx2, &sparkJob); err != nil {
-			fmt.Println(err)
-		}
+
 		return ctrl.Result{Requeue: true}, nil
 	}
 	return ctrl.Result{Requeue: true}, nil
@@ -140,6 +127,7 @@ func (r *SparkJobReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+//
 //type SparkJobPredicate struct {
 //}
 //
